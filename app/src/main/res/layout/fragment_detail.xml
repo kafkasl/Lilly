@@ -1,111 +1,113 @@
-<!-- Master layout. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center_vertical"
+    android:layout_gravity="left"
+    android:layout_height="wrap_content"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:orientation="vertical"
+    android:padding="16dp">
 
     <LinearLayout
-        android:gravity="center_vertical"
-        android:layout_gravity="left"
-        android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <!-- Header: Day, Date -->
         <TextView
             android:fontFamily="sans-serif-condensed"
-            android:id="@+id/detail_day_textview"
+            android:id="@+id/detail_name_textview"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             android:textColor="@color/black"
-            android:textSize="24sp" />
+            android:textSize="30sp"/>
 
-        <TextView
-            android:fontFamily="sans-serif-condensed"
-            android:id="@+id/detail_date_textview"
+        <LinearLayout
+            android:gravity="left"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:textColor="@color/grey_700"
-            android:textSize="16sp" />
+            android:orientation="horizontal"
+            android:layout_marginTop="15dp">
+
+            <ImageView
+                android:id="@+id/detail_icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginRight="15dp"
+                android:layout_marginLeft="15dp"/>
+
+            <TextView
+                android:fontFamily="sans-serif-condensed"
+                android:id="@+id/detail_type_textview"
+                android:layout_gravity="center_vertical"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:textColor="@color/grey_700"
+                android:textSize="25sp" />
+
+
+        </LinearLayout>
+
 
         <!-- Main content: high, low, art, weather state -->
         <LinearLayout
-            android:gravity="center_horizontal"
+            android:gravity="left"
             android:layout_height="match_parent"
             android:layout_marginTop="16dp"
             android:layout_width="match_parent"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:layout_marginLeft="15dp"
+            android:layout_marginRight="15dp">
 
-            <LinearLayout
-                android:gravity="left"
+
+            <fragment
+                android:id="@+id/map"
+                android:layout_width="wrap_content"
+                android:layout_height="150dp"
+                class="com.google.android.gms.maps.SupportMapFragment" />
+
+            <RatingBar
+                android:id="@+id/rating_bar_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                style="?android:attr/ratingBarStyleIndicator"
+                android:numStars="5"
+                android:stepSize="0.1"
+                android:isIndicator="true"/>
+
+            <TextView
+                android:fontFamily="sans-serif-light"
+                android:id="@+id/detail_rating_textview"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:orientation="vertical">
+                android:textAppearance="?android:textAppearanceLarge"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="10dp"
+                android:textSize="17dp"/>
 
-                <TextView
-                    android:fontFamily="sans-serif-light"
-                    android:id="@+id/detail_high_textview"
-                    android:layout_height="wrap_content"
-                    android:layout_width="wrap_content"
-                    android:textSize="96sp" />
 
-                <TextView
-                    android:id="@+id/detail_low_textview"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_height="wrap_content"
-                    android:layout_width="wrap_content"
-                    android:textColor="@color/grey_700"
-                    android:textSize="48sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:gravity="center_horizontal"
-                android:layout_gravity="center"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
-                android:orientation="vertical">
-
-                <ImageView
-                    android:id="@+id/detail_icon"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-
-                <TextView
-                    android:id="@+id/detail_forecast_textview"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?android:textAppearanceLarge"
-                    android:textColor="@color/grey_700" />
-            </LinearLayout>
         </LinearLayout>
 
         <!-- Humidity, wind, pressure -->
         <LinearLayout
             android:layout_height="match_parent"
             android:layout_marginRight="0dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="10dp"
             android:layout_width="match_parent"
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/detail_humidity_textview"
+                android:id="@+id/detail_evaluation_textview"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:textAppearance="?android:textAppearanceLarge" />
 
             <TextView
-                android:id="@+id/detail_pressure_textview"
+                android:id="@+id/detail_latlng_textview"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:layout_width="match_parent"
-                android:textAppearance="?android:textAppearanceLarge" />
-
-            <TextView
-                android:id="@+id/detail_wind_textview"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_width="match_parent"
-                android:textAppearance="?android:textAppearanceLarge" />
+                android:textAppearance="?android:textAppearanceSmall"
+                android:layout_marginLeft="15dp"/>
         </LinearLayout>
+
     </LinearLayout>
 </ScrollView>

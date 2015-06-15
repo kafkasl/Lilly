@@ -3,18 +3,46 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <EditTextPreference
-        android:title="@string/pref_location_label"
-        android:key="@string/pref_location_key"
-        android:defaultValue="@string/pref_location_default"
-        android:inputType="text"
-        android:singleLine="true" />
+    <CheckBoxPreference
+        android:title="@string/filter_atm_label"
+        android:defaultValue="true"
+        android:summary="Show nearby ATM\'s"
+        android:key="@string/atm_key" />
 
-    <ListPreference
-        android:title="@string/pref_units_label"
-        android:key="@string/pref_units_key"
-        android:defaultValue="@string/pref_units_metric"
-        android:entryValues="@array/pref_units_values"
-        android:entries="@array/pref_units_options" />
+    <CheckBoxPreference
+        android:title="@string/filter_cinema_label"
+        android:defaultValue="true"
+        android:summary="Show nearby cinemas"
+        android:key="@string/cinema_key" />
+
+    <CheckBoxPreference
+        android:title="@string/filter_disco_label"
+        android:defaultValue="true"
+        android:summary="Show nearby night clubs"
+        android:key="@string/disco_key" />
+
+    <CheckBoxPreference
+        android:title="@string/filter_drink_label"
+        android:defaultValue="true"
+        android:summary="Show nearby drinking places"
+        android:key="@string/drink_key" />
+
+    <CheckBoxPreference
+        android:title="@string/filter_food_label"
+        android:defaultValue="true"
+        android:summary="Show nearby food places"
+        android:key="@string/food_key" />
+
+    <CheckBoxPreference
+        android:title="@string/filter_shopping_label"
+        android:defaultValue="true"
+        android:summary="Show nearby shops"
+        android:key="@string/shopping_key" />
+
+    <CheckBoxPreference
+        android:title="@string/filter_leisure_label"
+        android:defaultValue="true"
+        android:summary="Show nearby leisure places"
+        android:key="@string/leisure_key" />
 
 </PreferenceScreen>

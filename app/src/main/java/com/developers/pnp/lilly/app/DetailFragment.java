@@ -26,6 +26,7 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.ShareActionProvider;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -33,10 +34,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RatingBar;
 import android.widget.TextView;
 
-import com.developers.pnp.lilly.app.data.WeatherContract;
-import com.developers.pnp.lilly.app.data.WeatherContract.WeatherEntry;
+import com.developers.pnp.lilly.app.data.PlacesContract;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -46,52 +54,50 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private static final String LOG_TAG = DetailFragment.class.getSimpleName();
     static final String DETAIL_URI = "URI";
 
-    private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
+    private static final String PLACE_SHARE_HASHTAG = " #LillyApp";
 
     private ShareActionProvider mShareActionProvider;
-    private String mForecast;
+    private String mPlace;
     private Uri mUri;
 
     private static final int DETAIL_LOADER = 0;
 
+
     private static final String[] DETAIL_COLUMNS = {
-            WeatherEntry.TABLE_NAME + "." + WeatherEntry._ID,
-            WeatherEntry.COLUMN_DATE,
-            WeatherEntry.COLUMN_SHORT_DESC,
-            WeatherEntry.COLUMN_MAX_TEMP,
-            WeatherEntry.COLUMN_MIN_TEMP,
-            WeatherEntry.COLUMN_HUMIDITY,
-            WeatherEntry.COLUMN_PRESSURE,
-            WeatherEntry.COLUMN_WIND_SPEED,
-            WeatherEntry.COLUMN_DEGREES,
-            WeatherEntry.COLUMN_WEATHER_ID,
-            // This works because the WeatherProvider returns location data joined with
-            // weather data, even though they're stored in two different tables.
-            WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING
+
+            PlacesContract.PlaceEntry.TABLE_NAME + "." + PlacesContract.PlaceEntry._ID,
+            PlacesContract.PlaceEntry.COLUMN_GOOGLE_REF,
+            PlacesContract.PlaceEntry.COLUMN_NAME,
+            PlacesContract.PlaceEntry.COLUMN_LAT,
+            PlacesContract.PlaceEntry.COLUMN_LNG,
+            PlacesContract.PlaceEntry.COLUMN_RATING,
+            PlacesContract.PlaceEntry.COLUMN_TYPE,
+            // This WILL ONLY WORK IF PlacesProvider returns EVALUATION data joined with
+            // PLACES data, even though they're stored in two different tables.
+            //PlacesContract.EvaluationEntry.COLUMN_DESCRIPTION
     };
-
-    // These indices are tied to DETAIL_COLUMNS.  If DETAIL_COLUMNS changes, these
+    // These indices are tied to PLACES_COLUMNS.  If PLACES_COLUMNS changes, these
     // must change.
-    public static final int COL_WEATHER_ID = 0;
-    public static final int COL_WEATHER_DATE = 1;
-    public static final int COL_WEATHER_DESC = 2;
-    public static final int COL_WEATHER_MAX_TEMP = 3;
-    public static final int COL_WEATHER_MIN_TEMP = 4;
-    public static final int COL_WEATHER_HUMIDITY = 5;
-    public static final int COL_WEATHER_PRESSURE = 6;
-    public static final int COL_WEATHER_WIND_SPEED = 7;
-    public static final int COL_WEATHER_DEGREES = 8;
-    public static final int COL_WEATHER_CONDITION_ID = 9;
+    static final int COL_PLACE_ID = 0;
+    static final int COL_PLACE_REF_ID = 1;
+    static final int COL_PLACE_NAME = 2;
+    static final int COL_PLACE_LAT = 3;
+    static final int COL_PLACE_LNG = 4;
+    static final int COL_PLACE_RATING = 5;
+    static final int COL_PLACE_TYPE = 6;
+    static final int COL_EVAL_DESCRIPTION = 7;
 
-    private ImageView mIconView;
-    private TextView mFriendlyDateView;
-    private TextView mDateView;
-    private TextView mDescriptionView;
-    private TextView mHighTempView;
-    private TextView mLowTempView;
-    private TextView mHumidityView;
-    private TextView mWindView;
-    private TextView mPressureView;
+        private ImageView mIconView;
+    private TextView mNameView;
+    private TextView mTypeView;
+    private TextView mRatingView;
+
+    private TextView mEvaluationView;
+    private TextView mLatLngView;
+    private RatingBar mRatingBarView;
+
+    private SupportMapFragment mGoogleMapFrag;
+
 
     public DetailFragment() {
         setHasOptionsMenu(true);
@@ -108,14 +114,18 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
         mIconView = (ImageView) rootView.findViewById(R.id.detail_icon);
-        mDateView = (TextView) rootView.findViewById(R.id.detail_date_textview);
-        mFriendlyDateView = (TextView) rootView.findViewById(R.id.detail_day_textview);
-        mDescriptionView = (TextView) rootView.findViewById(R.id.detail_forecast_textview);
-        mHighTempView = (TextView) rootView.findViewById(R.id.detail_high_textview);
-        mLowTempView = (TextView) rootView.findViewById(R.id.detail_low_textview);
-        mHumidityView = (TextView) rootView.findViewById(R.id.detail_humidity_textview);
-        mWindView = (TextView) rootView.findViewById(R.id.detail_wind_textview);
-        mPressureView = (TextView) rootView.findViewById(R.id.detail_pressure_textview);
+        mNameView = (TextView) rootView.findViewById(R.id.detail_name_textview);
+        mTypeView = (TextView) rootView.findViewById(R.id.detail_type_textview);
+        mRatingView = (TextView) rootView.findViewById(R.id.detail_rating_textview);
+        mEvaluationView = (TextView) rootView.findViewById(R.id.detail_evaluation_textview);
+        mLatLngView = (TextView) rootView.findViewById(R.id.detail_latlng_textview);
+
+        mRatingBarView = (RatingBar) rootView.findViewById(R.id.rating_bar_view);
+
+        mGoogleMapFrag = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
+        if (mGoogleMapFrag != null) mGoogleMapFrag.getView().setVisibility(View.INVISIBLE);
+
+
         return rootView;
     }
 
@@ -131,16 +141,16 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
 
         // If onLoadFinished happens before this, we can go ahead and set the share intent now.
-        if (mForecast != null) {
-            mShareActionProvider.setShareIntent(createShareForecastIntent());
+        if (mPlace != null) {
+            mShareActionProvider.setShareIntent(createSharePlacetIntent());
         }
     }
 
-    private Intent createShareForecastIntent() {
+    private Intent createSharePlacetIntent() {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
-        shareIntent.putExtra(Intent.EXTRA_TEXT, mForecast + FORECAST_SHARE_HASHTAG);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, mPlace + PLACE_SHARE_HASHTAG);
         return shareIntent;
     }
 
@@ -150,23 +160,14 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         super.onActivityCreated(savedInstanceState);
     }
 
-    void onLocationChanged( String newLocation ) {
-        // replace the uri, since the location has changed
-        Uri uri = mUri;
-        if (null != uri) {
-            long date = WeatherContract.WeatherEntry.getDateFromUri(uri);
-            Uri updatedUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(newLocation, date);
-            mUri = updatedUri;
-            getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
-        }
-    }
-
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         if ( null != mUri ) {
+            if (null != args) Log.e(LOG_TAG, "Passed args Bundle: " + args.toString());
+
             // Now create and return a CursorLoader that will take care of
             // creating a Cursor for the data being displayed.
-            return new CursorLoader(
+            return  new CursorLoader(
                     getActivity(),
                     mUri,
                     DETAIL_COLUMNS,
@@ -180,56 +181,53 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
         if (data != null && data.moveToFirst()) {
             // Read weather condition ID from cursor
-            int weatherId = data.getInt(COL_WEATHER_CONDITION_ID);
-            // Use placeholder Image
-            mIconView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
+            String type = data.getString(COL_PLACE_TYPE);
+            String formattedType = Utility.getFormattedType(type);
+            // Use placeholder ImagetoString
+            mIconView.setImageResource(Utility.getImageFromType(type));
 
-            // Read date from cursor and update views for day of week and date
-            long date = data.getLong(COL_WEATHER_DATE);
-            String friendlyDateText = Utility.getDayName(getActivity(), date);
-            String dateText = Utility.getFormattedMonthDay(getActivity(), date);
-            mFriendlyDateView.setText(friendlyDateText);
-            mDateView.setText(dateText);
+            String name = data.getString(COL_PLACE_NAME);
+            mNameView.setText(name);
 
-            // Read description from cursor and update view
-            String description = data.getString(COL_WEATHER_DESC);
-            mDescriptionView.setText(description);
+            mIconView.setContentDescription(name);
 
-            mIconView.setContentDescription(description);
+            mTypeView.setText(formattedType);
 
-            // Read high temperature from cursor and update view
-            boolean isMetric = Utility.isMetric(getActivity());
+            Float rating = data.getFloat(COL_PLACE_RATING);
+            mRatingView.setText("Rating: " + String.format("%.1f", rating));
 
-            double high = data.getDouble(COL_WEATHER_MAX_TEMP);
-            String highString = Utility.formatTemperature(getActivity(), high, isMetric);
-            mHighTempView.setText(highString);
+            mRatingBarView.setRating(rating);
+            mRatingBarView.setVisibility(View.VISIBLE);
 
-            // Read low temperature from cursor and update view
-            double low = data.getDouble(COL_WEATHER_MIN_TEMP);
-            String lowString = Utility.formatTemperature(getActivity(), low, isMetric);
-            mLowTempView.setText(lowString);
 
-            // Read humidity from cursor and update view
-            float humidity = data.getFloat(COL_WEATHER_HUMIDITY);
-            mHumidityView.setText(getActivity().getString(R.string.format_humidity, humidity));
+            String lat = data.getString(COL_PLACE_LAT);
+            String lng = data.getString(COL_PLACE_LNG);
 
-            // Read wind speed and direction from cursor and update view
-            float windSpeedStr = data.getFloat(COL_WEATHER_WIND_SPEED);
-            float windDirStr = data.getFloat(COL_WEATHER_DEGREES);
-            mWindView.setText(Utility.getFormattedWind(getActivity(), windSpeedStr, windDirStr));
+            mLatLngView.setText("Geolocation: " + lat + ", " + lng);
 
-            // Read pressure from cursor and update view
-            float pressure = data.getFloat(COL_WEATHER_PRESSURE);
-            mPressureView.setText(getActivity().getString(R.string.format_pressure, pressure));
+
+            LatLng latlng = new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));
+
+            mGoogleMapFrag.getView().setVisibility(View.VISIBLE);
+
+            GoogleMap mGoogleMap = ((SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map)).getMap();
+
+
+            mGoogleMap.setMyLocationEnabled(true);
+            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 16));
+
+
+            Marker newmarker = mGoogleMap.addMarker(new MarkerOptions().position(latlng).title(name).icon(BitmapDescriptorFactory.fromResource(R.drawable.map_icon2)));
 
             // We still need this for the share intent
-            mForecast = String.format("%s - %s - %s/%s", dateText, description, high, low);
+            mPlace = String.format("Check out %s %s place. It has %s stars and I'm near it!", name, Utility.getFormattedType(type), rating);
 
             // If onCreateOptionsMenu has already happened, we need to update the share intent now.
             if (mShareActionProvider != null) {
-                mShareActionProvider.setShareIntent(createShareForecastIntent());
+                mShareActionProvider.setShareIntent(createSharePlacetIntent());
             }
         }
     }

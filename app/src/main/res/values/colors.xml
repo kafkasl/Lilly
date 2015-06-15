@@ -6,8 +6,41 @@
     <color name="grey_700">#646464</color>
     <color name="black">#000000</color>
 
-    <color name="sunshine_light_blue">#ff64c2f4</color>
-    <color name="sunshine_blue">#ff1ca8f4</color>
-    <color name="sunshine_dark_blue">#0288D1</color>
+    <color name="light_blue">#738DAB</color>
+    <color name="blue">#516B89</color>
+    <color name="dark_blue">#23313f</color>
 
+    <!--@back_color: #23313f;-->
+    <!--@lblue: #00a1a5;-->
+    <!--@bblue: @lblue + #42244C;-->
+    <!--@dblue: #35485c;-->
+    <!--@guide-orange: #f8931c;-->
+    <!--@borderStyle: solid @lblue;-->
+    <!--@borderSize: medium;-->
+    <!--@boxBorderLight: @dblue + #050608;-->
+    <!--@boxBorderDark: @dblue - #0a0d11;-->
+    <!--@accordionBorderLight: @lblue + #050608;-->
+    <!--@accordionBorderDark: @lblue - #0a0d11;-->
+    <!--@darkgrey: #303030;-->
+    <!--@doctoraliaGreen: #4aae52;-->
+    <!--@blueclar: #516B89;-->
+    <!--@bluecel:#239398;-->
+    <!--@red:#e84f4f;-->
+    <!--@billeto:#e58e11;-->
+    <!--@chatBorderDark: #1d7b80;-->
+    <!--@chatBorderLight: #28aab0;-->
+    <!--@chatSelectedDark: #3a4e66;-->
+    <!--@chatSelectedLight: #6686b0;-->
+    <!--@senderChatColor: #239398;-->
+    <!--@facebookBlue: #45619d;-->
+    <!--@facebookDarkBlue: #004997;-->
+
+
+    <!--@turquoise: #24979C;-->
+    <!--@section-blue:#36485e;-->
+    <!--@dark-grey: #636363;-->
+    <!--@light-grey: #868686;-->
+    <!--@foto-margin: #cbdbe8;-->
+    <!--@guide-orange: #E89110;-->
+    <!--@market-blue: #4FB9EB;-->
 </resources>

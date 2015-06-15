@@ -15,6 +15,7 @@
  */
  package com.developers.pnp.lilly.app;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,6 +23,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -30,49 +32,44 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
-import com.developers.pnp.lilly.app.data.WeatherContract;
-public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
-    private ForecastAdapter mForecastAdapter;
+import com.developers.pnp.lilly.app.data.PlacesContract;
+import com.google.android.gms.maps.model.LatLng;
+
+public class PlacesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+
+    private final String LOG_TAG = PlacesFragment.class.getSimpleName();
+
+    private PlacesAdapter mPlacesAdapter;
+
 
     private ListView mListView;
     private int mPosition = ListView.INVALID_POSITION;
-    private boolean mUseTodayLayout;
 
     private static final String SELECTED_KEY = "selected_position";
 
     private static final int FORECAST_LOADER = 0;
-    // For the forecast view we're showing only a small subset of the stored data.
-    // Specify the columns we need.
-    private static final String[] FORECAST_COLUMNS = {
-            // In this case the id needs to be fully qualified with a table name, since
-            // the content provider joins the location & weather tables in the background
-            // (both have an _id column)
-            // On the one hand, that's annoying.  On the other, you can search the weather table
-            // using the location set by the user, which is only in the Location table.
-            // So the convenience is worth it.
-            WeatherContract.WeatherEntry.TABLE_NAME + "." + WeatherContract.WeatherEntry._ID,
-            WeatherContract.WeatherEntry.COLUMN_DATE,
-            WeatherContract.WeatherEntry.COLUMN_SHORT_DESC,
-            WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
-            WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,
-            WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING,
-            WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
-            WeatherContract.LocationEntry.COLUMN_COORD_LAT,
-            WeatherContract.LocationEntry.COLUMN_COORD_LONG
-    };
 
-    // These indices are tied to FORECAST_COLUMNS.  If FORECAST_COLUMNS changes, these
+    private static final String[] PLACES_COLUMNS = {
+
+        PlacesContract.PlaceEntry.TABLE_NAME + "." + PlacesContract.PlaceEntry._ID,
+        PlacesContract.PlaceEntry.COLUMN_GOOGLE_REF,
+        PlacesContract.PlaceEntry.COLUMN_NAME,
+        PlacesContract.PlaceEntry.COLUMN_LAT,
+        PlacesContract.PlaceEntry.COLUMN_LNG,
+        PlacesContract.PlaceEntry.COLUMN_RATING,
+        PlacesContract.PlaceEntry.COLUMN_TYPE
+    };
+    // These indices are tied to PLACES_COLUMNS.  If PLACES_COLUMNS changes, these
     // must change.
-    static final int COL_WEATHER_ID = 0;
-    static final int COL_WEATHER_DATE = 1;
-    static final int COL_WEATHER_DESC = 2;
-    static final int COL_WEATHER_MAX_TEMP = 3;
-    static final int COL_WEATHER_MIN_TEMP = 4;
-    static final int COL_LOCATION_SETTING = 5;
-    static final int COL_WEATHER_CONDITION_ID = 6;
-    static final int COL_COORD_LAT = 7;
-    static final int COL_COORD_LONG = 8;
+    static final int COL_PLACE_ID = 0;
+    static final int COL_PLACE_REF_ID = 1;
+    static final int COL_PLACE_NAME = 2;
+    static final int COL_PLACE_LAT = 3;
+    static final int COL_PLACE_LNG = 4;
+    static final int COL_PLACE_RATING = 5;
+    static final int COL_PLACE_TYPE = 6;
 
     /**
      * A callback interface that all activities containing this fragment must
@@ -83,10 +80,15 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         /**
          * DetailFragmentCallback for when an item has been selected.
          */
-        public void onItemSelected(Uri dateUri);
+        void onItemSelected(Uri dateUri);
     }
 
-    public ForecastFragment() {
+    public interface myLatLngProvider {
+        LatLng getCurrentLocation();
+        boolean isLocationEnabled(Context context);
+    }
+
+    public PlacesFragment() {
     }
 
     @Override
@@ -98,7 +100,7 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.forecastfragment, menu);
+        inflater.inflate(R.menu.placesfragment, menu);
     }
 
     @Override
@@ -108,7 +110,7 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-            updateWeather();
+            updatePlaces();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -118,16 +120,15 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        // The ForecastAdapter will take data from a source and
+        // The PlacesAdapter will take data from a source and
         // use it to populate the ListView it's attached to.
-        mForecastAdapter = new ForecastAdapter(getActivity(), null, 0);
-        mForecastAdapter.setUseTodayLayout(mUseTodayLayout);
+        mPlacesAdapter = new PlacesAdapter(getActivity(), null, 0);
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
         // Get a reference to the ListView, and attach this adapter to it.
         mListView = (ListView) rootView.findViewById(R.id.listview_forecast);
-        mListView.setAdapter(mForecastAdapter);
+        mListView.setAdapter(mPlacesAdapter);
         // We'll call our MainActivity
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
@@ -135,14 +136,17 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 // CursorAdapter returns a cursor at the correct position for getItem(), or null
                 // if it cannot seek to that position.
+
+                // UNCOMMMENT
                 Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
                 if (cursor != null) {
-                    String locationSetting = Utility.getPreferredLocation(getActivity());
                     ((Callback) getActivity())
-                            .onItemSelected(WeatherContract.WeatherEntry.buildWeatherLocationWithDate(
-                                    locationSetting, cursor.getLong(COL_WEATHER_DATE)
+                            .onItemSelected(PlacesContract.PlaceEntry.buildPlaceFromGoogleID(
+                                    cursor.getString(COL_PLACE_REF_ID)
                             ));
                 }
+
+                Log.e(LOG_TAG, "Position clicked: " + position);
                 mPosition = position;
             }
         });
@@ -169,14 +173,25 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
 
     // since we read the location when we create the loader, all we need to do is restart things
     void onLocationChanged( ) {
-        updateWeather();
+        updatePlaces();
         getLoaderManager().restartLoader(FORECAST_LOADER, null, this);
     }
 
-    private void updateWeather() {
-        FetchWeatherTask weatherTask = new FetchWeatherTask(getActivity());
-        String location = Utility.getPreferredLocation(getActivity());
-        weatherTask.execute(location);
+    private void updatePlaces() {
+        Log.v(LOG_TAG, "Updating places");
+        LatLng latlngLocation = ((myLatLngProvider)getActivity()).getCurrentLocation();
+
+        if (latlngLocation != null) {
+            FetchPlacesTask weatherTask = new FetchPlacesTask(getActivity());
+            weatherTask.execute(latlngLocation.latitude + "," + latlngLocation.longitude);
+        } else if (!((myLatLngProvider)getActivity()).isLocationEnabled(getActivity())){
+            CharSequence text = "Please enable location services for updated content";
+            int duration = Toast.LENGTH_LONG;
+
+            Toast toast = Toast.makeText(getActivity(), text, duration);
+            toast.show();
+        }
+
     }
 
     @Override
@@ -190,11 +205,6 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         super.onSaveInstanceState(outState);
     }
 
-    public void setUseTodayLayout(boolean useTodayLayout){
-        mUseTodayLayout = useTodayLayout;
-        if (mForecastAdapter != null)
-            mForecastAdapter.setUseTodayLayout(useTodayLayout);
-    }
 
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
@@ -205,23 +215,31 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         // dates after or including today.
 
         // Sort order:  Ascending, by date.
-        String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
+        //String sortOrder = PlacesContract.WeatherEntry.COLUMN_DATE + " ASC";
 
-        String locationSetting = Utility.getPreferredLocation(getActivity());
-        Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(
-                locationSetting, System.currentTimeMillis());
+        LatLng latlngLocation = ((myLatLngProvider)getActivity()).getCurrentLocation();
+        Uri placesForLocationUri;
+       if (latlngLocation != null) {
+          placesForLocationUri = PlacesContract.PlaceEntry.buildPlacesFromLocation(
+                   latlngLocation);
+       } else {
+           placesForLocationUri = PlacesContract.PlaceEntry.buildPlaces();
+       }
+//        Uri weatherForLocationUri = PlacesContract.WeatherEntry.buildWeatherLocationWithStartDate(
+//                locationSetting, System.currentTimeMillis());
 
         return new CursorLoader(getActivity(),
-                weatherForLocationUri,
-                FORECAST_COLUMNS,
+                placesForLocationUri,
+                PLACES_COLUMNS,
                 null,
                 null,
-                sortOrder);
+                null);
+                //sortOrder);
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        mForecastAdapter.swapCursor(data);
+        mPlacesAdapter.swapCursor(data);
         if (mPosition != ListView.INVALID_POSITION) {
             // If we don't need to restart the loader, and there's a desired position to restore
             // to, do so now.
@@ -231,6 +249,6 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
 
     @Override
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
-        mForecastAdapter.swapCursor(null);
+        mPlacesAdapter.swapCursor(null);
     }
 }
