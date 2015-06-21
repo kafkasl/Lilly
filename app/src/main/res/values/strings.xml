@@ -2,7 +2,7 @@
 <resources>
 
 
-<string name="app_name">Lilly</string>
+    <string name="app_name">Lilly</string>
 
     <string name="action_settings">Filters</string>
     <string name="action_share">Share</string>
