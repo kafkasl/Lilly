@@ -21,43 +21,20 @@ import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 
 import com.developers.pnp.lilly.app.Utility;
 
 public class PlacesProvider extends ContentProvider {
+    static final int PLACES = 111;
+    static final int PLACE_FROM_GOOGLE_ID = 113;
     private static final String TAG = PlacesProvider.class.getName();
     // The URI Matcher used by this content provider.
     private static final UriMatcher sUriMatcher = buildUriMatcher();
-    private PlacesDbHelper mOpenHelper;
-
-    static final int PLACES = 111;
-    static final int PLACE_FROM_GOOGLE_ID = 113;
-
-
-   private static final SQLiteQueryBuilder sPlaceByRefQueryBuilder;
-
-    static {
-
-        sPlaceByRefQueryBuilder = new SQLiteQueryBuilder();
-
-        //This is an inner join which looks like
-        //place INNER JOIN evaluation ON place.google_ref = evaluation.place_key
-        sPlaceByRefQueryBuilder.setTables(
-                PlacesContract.PlaceEntry.TABLE_NAME + " INNER JOIN " +
-                        PlacesContract.EvaluationEntry.TABLE_NAME +
-                        " ON " + PlacesContract.PlaceEntry.TABLE_NAME +
-                        "." + PlacesContract.PlaceEntry.COLUMN_GOOGLE_REF +
-                        " = " + PlacesContract.EvaluationEntry.TABLE_NAME +
-                        "." + PlacesContract.EvaluationEntry.COLUMN_PLACE_KEY);
-    }
-
     //place.google_ref = ?
     private static final String sPlaceByRefSelection =
             PlacesContract.PlaceEntry.TABLE_NAME +
                     "." + PlacesContract.PlaceEntry.COLUMN_GOOGLE_REF + " = ? ";
-
     //places.lat = ?, places.lng = ?
     private static final String sLatLngSelection =
             PlacesContract.PlaceEntry.TABLE_NAME +
@@ -67,6 +44,25 @@ public class PlacesProvider extends ContentProvider {
     private static final String sPreferredTypesSelection =
             PlacesContract.PlaceEntry.TABLE_NAME +
                     "." + PlacesContract.PlaceEntry.COLUMN_TYPE + " IN (?,?,?,?,?,?,?)";
+    private PlacesDbHelper mOpenHelper;
+
+    static UriMatcher buildUriMatcher() {
+        // 1) The code passed into the constructor represents the code to return for the root
+        // URI.  It's common to use NO_MATCH as the code for this case. Add the constructor below.
+
+        final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
+
+        final String authority = PlacesContract.CONTENT_AUTHORITY;
+
+        matcher.addURI(authority, PlacesContract.PATH_PLACES, PLACES);
+        matcher.addURI(authority, PlacesContract.PATH_PLACES + "/*", PLACE_FROM_GOOGLE_ID);
+
+
+        Uri added = Uri.parse("content://com.developers.pnp.lilly.app").buildUpon().appendPath("places").build();
+
+
+        return matcher;
+    }
 
     private Cursor getPlaceByGoogleRef(Uri uri, String[] projection, String selection, String[] selectionArgs,
                                        String sortOrder) {
@@ -96,24 +92,6 @@ public class PlacesProvider extends ContentProvider {
                 null,
                 null,
                 sortOrder);
-    }
-
-    static UriMatcher buildUriMatcher() {
-        // 1) The code passed into the constructor represents the code to return for the root
-        // URI.  It's common to use NO_MATCH as the code for this case. Add the constructor below.
-
-        final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
-
-        final String authority = PlacesContract.CONTENT_AUTHORITY;
-
-        matcher.addURI(authority, PlacesContract.PATH_PLACES, PLACES);
-        matcher.addURI(authority, PlacesContract.PATH_PLACES + "/*", PLACE_FROM_GOOGLE_ID);
-
-
-        Uri added = Uri.parse("content://com.developers.pnp.lilly.app").buildUpon().appendPath("places").build();
-
-
-        return matcher;
     }
 
     /*

@@ -3,8 +3,10 @@ package com.developers.pnp.lilly.app;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import com.developers.pnp.lilly.app.data.PlacesContract;
+import com.google.android.gms.maps.model.LatLng;
 
 import java.util.Arrays;
 
@@ -73,25 +75,29 @@ public class Utility {
         return type.replace('_', ' ');
     }
 
-//    public static LatLng getLastLocation(Context context){
-//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-//        String defValue = "0.0";
-//        String lat = prefs.getString(context.getString(R.string.last_lat_key), defValue);
-//        String lng = prefs.getString(context.getString(R.string.last_lng_key), defValue);
-//
-//        return new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));
-//    }
-//
-//    public static void setLastLocation(Context context, LatLng lastLocation){
-//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-//
-//        String lat = Double.toString(lastLocation.latitude);
-//        String lng = Double.toString(lastLocation.longitude);
-//
-//        prefs.edit().putString(context.getString(R.string.last_lat_key), lat).apply();
-//        prefs.edit().putString(context.getString(R.string.last_lng_key), lng).apply();
-//
-//    }
+    public static LatLng getLastLocation(Context context) {
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String defValue = "0.0";
+        String lat = prefs.getString(context.getString(R.string.last_lat_key), defValue);
+        String lng = prefs.getString(context.getString(R.string.last_lng_key), defValue);
+
+        LatLng rLatLng = new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));
+        Log.d(LOG_TAG, "Retrieveng last location\n" + rLatLng.toString());
+        return rLatLng;
+    }
+
+    public static void setLastLocation(Context context, LatLng lastLocation) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        Log.d(LOG_TAG, "Saving last location\n" + lastLocation.toString());
+
+        String lat = Double.toString(lastLocation.latitude);
+        String lng = Double.toString(lastLocation.longitude);
+
+        prefs.edit().putString(context.getString(R.string.last_lat_key), lat).apply();
+        prefs.edit().putString(context.getString(R.string.last_lng_key), lng).apply();
+
+    }
 
     public static String[] getPreferencesTypes(Context context){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -128,13 +134,6 @@ public class Utility {
 
         return selectedTypes;
     }
-
-
-//    public static String getPreferredLocation(Context context) {
-//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-//        return prefs.getString(context.getString(R.string.pref_location_key),
-//                context.getString(R.string.pref_location_default));
-//    }
 
 
 }

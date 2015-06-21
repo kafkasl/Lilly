@@ -1,19 +1,4 @@
-/*
- * Copyright (C) 2014 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
- package com.developers.pnp.lilly.app;
+package com.developers.pnp.lilly.app;
 
 import android.content.Context;
 import android.content.Intent;
@@ -37,17 +22,20 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 
 public class MainActivity extends ActionBarActivity implements myLatLngProvider, Callback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
-    private final String LOG_TAG = MainActivity.class.getSimpleName();
     private static final String DETAILFRAGMENT_TAG = "DFTAG";
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    private final String LOG_TAG = MainActivity.class.getSimpleName();
+    private final float UPDATE_THRESHOLD = (float) 100.0;
 
-    private PlacesFragment mPlacesFragment;
 
     private boolean mTwoPane;
+
+    private SupportMapFragment mGoogleMapFrag;
 
 
     private GoogleApiClient mGoogleApiClient;
@@ -66,8 +54,8 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
         // Create the LocationRequest object
         mLocationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(1 * 60 * 1000)        // we update every 1 min (120000 in milliseconds)
-                .setFastestInterval(60 * 1000); // 1 second, in milliseconds
+                .setInterval(5 * 60 * 1000)        // we update every 5 min (120000 in milliseconds)
+                .setFastestInterval(5 * 60 * 1000); // 5 min
 
 
 
@@ -89,9 +77,6 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
             mTwoPane = false;
             getSupportActionBar().setElevation(0f);
         }
-
-        mPlacesFragment =  ((PlacesFragment)getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_places));
     }
 
     protected synchronized void buildGoogleApiClient() {
@@ -156,11 +141,22 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
 
-        LatLng newLatLng = new LatLng(currentLatitude, currentLongitude);
-        if (mLatLng == null || !mLatLng.equals(newLatLng)){
-            mLatLng = newLatLng;
+        mLatLng = new LatLng(currentLatitude, currentLongitude);
 
-            Log.d(LOG_TAG, "Handling new location [" + mLatLng.toString() + "]");
+        LatLng lastLocation = Utility.getLastLocation(this);
+
+        float[] results = new float[3];
+        Location.distanceBetween(
+                lastLocation.latitude,
+                lastLocation.longitude,
+                mLatLng.latitude,
+                mLatLng.longitude,
+                results); //returns meters
+
+        float distance = results[0];
+        if (distance >= UPDATE_THRESHOLD) {
+
+            Utility.setLastLocation(this, mLatLng);
 
             FetchPlacesTask weatherTask = new FetchPlacesTask(this);
             weatherTask.execute(mLatLng.latitude + "," + mLatLng.longitude);
@@ -211,7 +207,6 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(LOG_TAG, "Calling to googleAPIClient connect");
         if (!isLocationEnabled(this)){
             CharSequence text = "Please enable location services for updated content";
             int duration = Toast.LENGTH_SHORT;
@@ -234,7 +229,6 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
 
     @Override
     public void onItemSelected(Uri contentUri) {
-        Log.v(LOG_TAG, "M1: " + contentUri.toString());
         if (mTwoPane) {
             // In two-pane mode, show the detail view in this activity by
             // adding or replacing the detail fragment using a
@@ -259,4 +253,5 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
     public LatLng getCurrentLocation() {
         return mLatLng;
     }
+
 }

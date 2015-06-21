@@ -23,7 +23,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -39,18 +38,17 @@ import com.google.android.gms.maps.model.LatLng;
 
 public class PlacesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    private final String LOG_TAG = PlacesFragment.class.getSimpleName();
-
-    private PlacesAdapter mPlacesAdapter;
-
-
-    private ListView mListView;
-    private int mPosition = ListView.INVALID_POSITION;
-
+    // These indices are tied to PLACES_COLUMNS.  If PLACES_COLUMNS changes, these
+    // must change.
+    static final int COL_PLACE_ID = 0;
+    static final int COL_PLACE_REF_ID = 1;
+    static final int COL_PLACE_NAME = 2;
+    static final int COL_PLACE_LAT = 3;
+    static final int COL_PLACE_LNG = 4;
+    static final int COL_PLACE_RATING = 5;
+    static final int COL_PLACE_TYPE = 6;
     private static final String SELECTED_KEY = "selected_position";
-
     private static final int FORECAST_LOADER = 0;
-
     private static final String[] PLACES_COLUMNS = {
 
         PlacesContract.PlaceEntry.TABLE_NAME + "." + PlacesContract.PlaceEntry._ID,
@@ -61,32 +59,9 @@ public class PlacesFragment extends Fragment implements LoaderManager.LoaderCall
         PlacesContract.PlaceEntry.COLUMN_RATING,
         PlacesContract.PlaceEntry.COLUMN_TYPE
     };
-    // These indices are tied to PLACES_COLUMNS.  If PLACES_COLUMNS changes, these
-    // must change.
-    static final int COL_PLACE_ID = 0;
-    static final int COL_PLACE_REF_ID = 1;
-    static final int COL_PLACE_NAME = 2;
-    static final int COL_PLACE_LAT = 3;
-    static final int COL_PLACE_LNG = 4;
-    static final int COL_PLACE_RATING = 5;
-    static final int COL_PLACE_TYPE = 6;
-
-    /**
-     * A callback interface that all activities containing this fragment must
-     * implement. This mechanism allows activities to be notified of item
-     * selections.
-     */
-    public interface Callback {
-        /**
-         * DetailFragmentCallback for when an item has been selected.
-         */
-        void onItemSelected(Uri dateUri);
-    }
-
-    public interface myLatLngProvider {
-        LatLng getCurrentLocation();
-        boolean isLocationEnabled(Context context);
-    }
+    private PlacesAdapter mPlacesAdapter;
+    private ListView mListView;
+    private int mPosition = ListView.INVALID_POSITION;
 
     public PlacesFragment() {
     }
@@ -137,7 +112,6 @@ public class PlacesFragment extends Fragment implements LoaderManager.LoaderCall
                 // CursorAdapter returns a cursor at the correct position for getItem(), or null
                 // if it cannot seek to that position.
 
-                // UNCOMMMENT
                 Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
                 if (cursor != null) {
                     ((Callback) getActivity())
@@ -146,16 +120,11 @@ public class PlacesFragment extends Fragment implements LoaderManager.LoaderCall
                             ));
                 }
 
-                Log.e(LOG_TAG, "Position clicked: " + position);
                 mPosition = position;
             }
         });
 
-        // If there's instance state, mine it for useful information.
-        // The end-goal here is that the user never knows that turning their device sideways
-        // does crazy lifecycle related things.  It should feel like some stuff stretched out,
-        // or magically appeared to take advantage of room, but data or place in the app was never
-        // actually *lost*.
+
         if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)) {
             // The listview probably hasn't even been populated yet.  Actually perform the
             // swapout in onLoadFinished.
@@ -178,7 +147,6 @@ public class PlacesFragment extends Fragment implements LoaderManager.LoaderCall
     }
 
     private void updatePlaces() {
-        Log.v(LOG_TAG, "Updating places");
         LatLng latlngLocation = ((myLatLngProvider)getActivity()).getCurrentLocation();
 
         if (latlngLocation != null) {
@@ -196,26 +164,15 @@ public class PlacesFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        // When tablets rotate, the currently selected list item needs to be saved.
-        // When no item is selected, mPosition will be set to Listview.INVALID_POSITION,
-        // so check for that before storing.
+
         if (mPosition != ListView.INVALID_POSITION) {
             outState.putInt(SELECTED_KEY, mPosition);
         }
         super.onSaveInstanceState(outState);
     }
 
-
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-        // This is called when a new Loader needs to be created.  This
-        // fragment only uses one loader, so we don't care about checking the id.
-
-        // To only show current and future dates, filter the query to return weather only for
-        // dates after or including today.
-
-        // Sort order:  Ascending, by date.
-        //String sortOrder = PlacesContract.WeatherEntry.COLUMN_DATE + " ASC";
 
         LatLng latlngLocation = ((myLatLngProvider)getActivity()).getCurrentLocation();
         Uri placesForLocationUri;
@@ -225,8 +182,6 @@ public class PlacesFragment extends Fragment implements LoaderManager.LoaderCall
        } else {
            placesForLocationUri = PlacesContract.PlaceEntry.buildPlaces();
        }
-//        Uri weatherForLocationUri = PlacesContract.WeatherEntry.buildWeatherLocationWithStartDate(
-//                locationSetting, System.currentTimeMillis());
 
         return new CursorLoader(getActivity(),
                 placesForLocationUri,
@@ -234,7 +189,6 @@ public class PlacesFragment extends Fragment implements LoaderManager.LoaderCall
                 null,
                 null,
                 null);
-                //sortOrder);
     }
 
     @Override
@@ -250,5 +204,23 @@ public class PlacesFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
         mPlacesAdapter.swapCursor(null);
+    }
+
+    /**
+     * A callback interface that all activities containing this fragment must
+     * implement. This mechanism allows activities to be notified of item
+     * selections.
+     */
+    public interface Callback {
+        /**
+         * DetailFragmentCallback for when an item has been selected.
+         */
+        void onItemSelected(Uri dateUri);
+    }
+
+    public interface myLatLngProvider {
+        LatLng getCurrentLocation();
+
+        boolean isLocationEnabled(Context context);
     }
 }

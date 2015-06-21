@@ -19,10 +19,10 @@
         tools:layout="@android:layout/list_content" />
 
     <LinearLayout
-        android:orientation="vertical"
         android:id="@+id/place_detail_container"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="4" />
+        android:layout_weight="4"
+        android:orientation="vertical" />
 
 </LinearLayout>

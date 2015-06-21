@@ -10,28 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 
-/**
- * {@link PlacesAdapter} exposes a list of weather forecasts
- * from a {@link Cursor} to a {@link android.widget.ListView}.
- */
 public class PlacesAdapter extends CursorAdapter {
-
-    /**
-     * Cache of the children views for a forecast list item.
-     */
-    public static class ViewHolder {
-        public final ImageView iconView;
-        public final TextView nameView;
-        public final TextView typeView;
-        public final TextView ratingView;
-
-        public ViewHolder(View view) {
-            iconView = (ImageView) view.findViewById(R.id.list_item_icon);
-            nameView = (TextView) view.findViewById(R.id.list_item_name_textview);
-            typeView = (TextView) view.findViewById(R.id.list_item_type_textview);
-            ratingView = (TextView) view.findViewById(R.id.list_item_rating_textview);
-        }
-    }
 
     public PlacesAdapter(Context context, Cursor c, int flags) {
         super(context, c, flags);
@@ -64,15 +43,12 @@ public class PlacesAdapter extends CursorAdapter {
         String placeName = cursor.getString(PlacesFragment.COL_PLACE_NAME);
         viewHolder.nameView.setText(placeName);
 
-        // Read weather forecast from cursor
         String type = Utility.getFormattedType(cursor.getString(PlacesFragment.COL_PLACE_TYPE));
 
-        // Find TextView and set weather forecast on it
         viewHolder.typeView.setText(type);
 
         viewHolder.iconView.setContentDescription(placeName);
 
-        // Read high temperature from cursor
         double rating = cursor.getDouble(PlacesFragment.COL_PLACE_RATING);
         viewHolder.ratingView.setText(Double.toString(rating));
 
@@ -82,5 +58,19 @@ public class PlacesAdapter extends CursorAdapter {
     public int getViewTypeCount() {
         // All places of the list have the same style
         return 1;
+    }
+
+    public static class ViewHolder {
+        public final ImageView iconView;
+        public final TextView nameView;
+        public final TextView typeView;
+        public final TextView ratingView;
+
+        public ViewHolder(View view) {
+            iconView = (ImageView) view.findViewById(R.id.list_item_icon);
+            nameView = (TextView) view.findViewById(R.id.list_item_name_textview);
+            typeView = (TextView) view.findViewById(R.id.list_item_type_textview);
+            ratingView = (TextView) view.findViewById(R.id.list_item_rating_textview);
+        }
     }
 }
