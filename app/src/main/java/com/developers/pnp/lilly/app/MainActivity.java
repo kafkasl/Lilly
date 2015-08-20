@@ -51,11 +51,12 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
 
         mLatLng = null;
 
+
         // Create the LocationRequest object
         mLocationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(5 * 60 * 1000)        // we update every 5 min (120000 in milliseconds)
-                .setFastestInterval(5 * 60 * 1000); // 5 min
+                .setFastestInterval(2* 60 * 1000); // 120 sec
 
 
 
@@ -77,6 +78,8 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
             mTwoPane = false;
             getSupportActionBar().setElevation(0f);
         }
+        Utility.setLastLocation(this, new LatLng(-1, -1));
+
     }
 
     protected synchronized void buildGoogleApiClient() {
@@ -144,7 +147,6 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
         mLatLng = new LatLng(currentLatitude, currentLongitude);
 
         LatLng lastLocation = Utility.getLastLocation(this);
-
         float[] results = new float[3];
         Location.distanceBetween(
                 lastLocation.latitude,
@@ -154,6 +156,7 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
                 results); //returns meters
 
         float distance = results[0];
+
         if (distance >= UPDATE_THRESHOLD) {
 
             Utility.setLastLocation(this, mLatLng);
@@ -196,6 +199,8 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
             else {
                 text = "Waiting for new location...";
                 duration = Toast.LENGTH_SHORT;
+                Utility.setLastLocation(this, new LatLng(-1, -1));
+
             }
             Toast toast = Toast.makeText(this, text, duration);
             toast.show();
@@ -225,7 +230,11 @@ public class MainActivity extends ActionBarActivity implements myLatLngProvider,
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
             mGoogleApiClient.disconnect();
         }
+        Utility.setLastLocation(this, new LatLng(-1, -1));
+
     }
+
+
 
     @Override
     public void onItemSelected(Uri contentUri) {

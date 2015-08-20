@@ -7,9 +7,6 @@
     android:orientation="horizontal"
     tools:context="com.developers.pnp.lilly.app.MainActivity">
 
-    <!--
-    This layout is a two-pane layout for the Sunshine master/detail flow.
-    -->
     <fragment
         android:id="@+id/fragment_places"
         android:name="com.developers.pnp.lilly.app.PlacesFragment"

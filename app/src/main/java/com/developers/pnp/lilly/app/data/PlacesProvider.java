@@ -28,27 +28,19 @@ import com.developers.pnp.lilly.app.Utility;
 public class PlacesProvider extends ContentProvider {
     static final int PLACES = 111;
     static final int PLACE_FROM_GOOGLE_ID = 113;
-    private static final String TAG = PlacesProvider.class.getName();
-    // The URI Matcher used by this content provider.
+
     private static final UriMatcher sUriMatcher = buildUriMatcher();
     //place.google_ref = ?
     private static final String sPlaceByRefSelection =
             PlacesContract.PlaceEntry.TABLE_NAME +
                     "." + PlacesContract.PlaceEntry.COLUMN_GOOGLE_REF + " = ? ";
-    //places.lat = ?, places.lng = ?
-    private static final String sLatLngSelection =
-            PlacesContract.PlaceEntry.TABLE_NAME +
-                    "." + PlacesContract.PlaceEntry.COLUMN_LAT + " = ? AND " +
-                    PlacesContract.PlaceEntry.COLUMN_LNG + " = ?";
-    //places.type = ?, places.lng = ?
+
     private static final String sPreferredTypesSelection =
             PlacesContract.PlaceEntry.TABLE_NAME +
                     "." + PlacesContract.PlaceEntry.COLUMN_TYPE + " IN (?,?,?,?,?,?,?)";
     private PlacesDbHelper mOpenHelper;
 
     static UriMatcher buildUriMatcher() {
-        // 1) The code passed into the constructor represents the code to return for the root
-        // URI.  It's common to use NO_MATCH as the code for this case. Add the constructor below.
 
         final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
 
@@ -94,21 +86,13 @@ public class PlacesProvider extends ContentProvider {
                 sortOrder);
     }
 
-    /*
-        Students: We've coded this for you.  We just create a new PlacesDbHelper for later use
-        here.
-     */
     @Override
     public boolean onCreate() {
         mOpenHelper = new PlacesDbHelper(getContext());
         return true;
     }
 
-    /*
-        Students: Here's where you'll code the getType function that uses the UriMatcher.  You can
-        test this by uncommenting testGetType in TestProvider.
 
-     */
     @Override
     public String getType(Uri uri) {
 
@@ -128,12 +112,10 @@ public class PlacesProvider extends ContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
                         String sortOrder) {
-        // Here's the switch statement that, given a URI, will determine what kind of request it is,
-        // and query the database accordingly.
+
         Cursor retCursor;
 
         switch (sUriMatcher.match(uri)) {
-            // "weather/*/*"
 
             case PLACES:
                 retCursor = getPlacesByPreferredTypes(uri, projection, selection, selectionArgs, sortOrder);
@@ -149,9 +131,7 @@ public class PlacesProvider extends ContentProvider {
         return retCursor;
     }
 
-    /*
-        Student: Add the ability to insert Locations to the implementation of this function.
-     */
+
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
@@ -192,10 +172,6 @@ public class PlacesProvider extends ContentProvider {
                 deletedRows = db.delete(PlacesContract.PlaceEntry.TABLE_NAME, selection, selectionArgs);
                 break;
 
-//            case WEATHER:
-//            case LOCATION:
-//                deletedRows = db.delete(PlacesContract.LocationEntry.TABLE_NAME, selection, selectionArgs);
-//                break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
@@ -224,8 +200,7 @@ public class PlacesProvider extends ContentProvider {
 
         if (updatedRows > 0)
             getContext().getContentResolver().notifyChange(uri, null);
-        // Student: This is a lot like the delete function.  We return the number of rows impacted
-        // by the update.
+
         return updatedRows;
     }
 
@@ -255,9 +230,7 @@ public class PlacesProvider extends ContentProvider {
         }
     }
 
-    // You do not need to call this method. This is a method specifically to assist the testing
-    // framework in running smoothly. You can read more at:
-    // http://developer.android.com/reference/android/content/ContentProvider.html#shutdown()
+
     @Override
     @TargetApi(11)
     public void shutdown() {

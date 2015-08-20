@@ -43,6 +43,7 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
     private final String LOG_TAG = FetchPlacesTask.class.getSimpleName();
     private final Context mContext;
     private final String NEXT_TOKEN_EMPTY = "empty";
+    private final String OVER_QUERY_LIMIT = "OVER_QUERY_LIMIT";
 
 
     private Vector<ContentValues> mCVVector =  new Vector<ContentValues>();
@@ -57,6 +58,8 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
 
     private String getPlacesDataFromJson(String placesJsonStr, String calledToken)
             throws JSONException {
+
+
 
         // this boolean checks wether there are more pages to call
         String pageToken;
@@ -88,7 +91,6 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
             pageToken = placesJson.getString(PLACES_NEXT_TOKEN);
         } catch (JSONException e) {
             pageToken = NEXT_TOKEN_EMPTY;
-            Log.d(LOG_TAG, "Exception " + e.getMessage());
         }
 
         String status = "unknown";
@@ -100,7 +102,9 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
 
         if (status.equals(INVALID_REQUEST)){
             pageToken = calledToken;
-            Log.d(LOG_TAG, "Invalid Request");
+        }
+        else if (status.equals(OVER_QUERY_LIMIT)){
+            Log.e(LOG_TAG, "Reached maximum api usage.");
         }
 
         JSONArray placesArray = placesJson.getJSONArray(PLACES_LIST);
@@ -119,7 +123,9 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
             double rating = -1;
             String type = "";
 
+
             JSONObject place = placesArray.getJSONObject(i);
+
 
             JSONArray typesArray = place.getJSONArray(PLACES_TYPES);
 
@@ -133,14 +139,12 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
             try {
                 rating = place.getDouble(PLACES_RATING);
             } catch (JSONException e) {
-                Log.d(LOG_TAG, e.getMessage());
             }
 
             try {
                 String[] types = new String[typesArray.length()];
                 for (int j = 0; j < typesArray.length(); ++j) {
                     String typeVal = typesArray.getString(j);
-                    Log.d(LOG_TAG, "PLACES STRING:   \n\n\n" + placesJsonStr);
 
                     types[j] = typeVal;
                 }
@@ -148,7 +152,6 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
                 type = Utility.getBestFittingType(types);
 
             } catch (JSONException e) {
-                Log.d(LOG_TAG, e.getMessage());
             }
 
             // If type is null it means the place has no category and therefore shouldn't be displayed
@@ -168,7 +171,6 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
         }
         if (cVVector.size() > 0) {
             mCVVector.addAll(cVVector);
-            Log.i(LOG_TAG, "Place to be inserted");
         }
 
         return pageToken;
@@ -187,7 +189,7 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
         String placesJsonStr;
         String nextToken = NEXT_TOKEN_EMPTY;
 
-        int radius = 500;
+        int radius = 200;
         boolean thereIsData = true;
 
 
@@ -214,6 +216,7 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
                             .appendQueryParameter(QUERY_PARAM, params[0])
                             .appendQueryParameter(RADIUS_PARAM, Integer.toString(radius)).build();
                 }
+
 
                 URL url = new URL(builtUri.toString());
 
@@ -243,17 +246,17 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
 
                 placesJsonStr = buffer.toString();
 
-                if (nextToken.equals((NEXT_TOKEN_EMPTY)))
-                    Log.d(LOG_TAG, placesJsonStr);
-                nextToken = getPlacesDataFromJson(placesJsonStr, nextToken);
+
+                if (thereIsData)
+                    nextToken = getPlacesDataFromJson(placesJsonStr, nextToken);
+
 
 
                 thereIsData = !nextToken.equals(NEXT_TOKEN_EMPTY);
 
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error. ", e);
-                // If the code didn't successfully get the weather data, there's no point in attempting
-                // to parse it.
+
             } catch (JSONException e) {
                 Log.e(LOG_TAG, e.getMessage(), e);
                 e.printStackTrace();
@@ -269,6 +272,11 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
                     }
                 }
             }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         int inserted = 0;
@@ -281,6 +289,7 @@ public class FetchPlacesTask extends AsyncTask<String, Void, Void> {
             deleted = mContext.getContentResolver().delete(PlaceEntry.CONTENT_URI, null, null);
             inserted = mContext.getContentResolver().bulkInsert(PlaceEntry.CONTENT_URI, cvArray);
         }
+
 
         return null;
     }

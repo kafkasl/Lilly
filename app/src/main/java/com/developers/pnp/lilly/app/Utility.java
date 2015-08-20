@@ -3,7 +3,6 @@ package com.developers.pnp.lilly.app;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 import com.developers.pnp.lilly.app.data.PlacesContract;
 import com.google.android.gms.maps.model.LatLng;
@@ -83,13 +82,11 @@ public class Utility {
         String lng = prefs.getString(context.getString(R.string.last_lng_key), defValue);
 
         LatLng rLatLng = new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));
-        Log.d(LOG_TAG, "Retrieveng last location\n" + rLatLng.toString());
         return rLatLng;
     }
 
     public static void setLastLocation(Context context, LatLng lastLocation) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        Log.d(LOG_TAG, "Saving last location\n" + lastLocation.toString());
 
         String lat = Double.toString(lastLocation.latitude);
         String lng = Double.toString(lastLocation.longitude);
